@@ -1,0 +1,6 @@
+opencv-python
+scipy
+h5py
+matplotlib
+bm3d
+scikit-image==0.18.3
