@@ -17,7 +17,7 @@ import scipy.io as sio
 def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True, 
                 denoiser='tv', iter_max=50, noise_estimate=True, sigma=None, 
                 tv_weight=0.1, tv_iter_max=5, multichannel=True, x0=None, 
-                X_orig=None, model=None, show_iqa=True):
+                X_orig=None, model=None, show_iqa=True, nc=31):
     '''
     Alternating direction method of multipliers (ADMM)[1]-based denoising 
     regularization for snapshot compressive imaging (SCI).
@@ -97,7 +97,7 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
     if not isinstance(sigma, list):
         sigma = [sigma]
     if not isinstance(iter_max, list):
-        iter_max = [iter_max] * len(sigma)
+        iter_max = [iter_max] * len(sigma) # iter_max refers to the number of iterations for a specific sigma value
     y1 = np.zeros_like(y) 
     Phi_sum = np.sum(Phi,2)
     Phi_sum[Phi_sum==0]=1
@@ -108,7 +108,7 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
     k = 0
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     model = net()
-    model.load_state_dict(torch.load(r'./check_points/deep_denoiser.pth'))
+    model.load_state_dict(torch.load(r'./checkpoints/deep_denoiser.pth'))
     model.eval()
     for q, v in model.named_parameters():
         v.requires_grad = False
@@ -133,7 +133,7 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
                 h_ch=10
                 if (k>123 and k<=125 ) or (k>=119 and k<=121) or (k>=115 and k<=117) or (k>=111 and k<=113) or (k>=107 and k<=109) or (k>=103 and k<=105) or (k>=99 and k<=101) or (k>=95 and k<=97) or  (k>=91 and k<=93) or (k>=87 and k<=89) or (k>=83 and k<=85):
                     tem = None
-                    for i in range(31):
+                    for i in range(nc):
                         net_input = None
                         if i < 3:
                             ori_nsig = nsig
@@ -156,15 +156,15 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
                                 tem = output
                             else:
                                 tem = np.dstack((tem, output))
-                        elif i > 27:
+                        elif i > nc-4:
                             ori_nsig=nsig
                             if k>=45:
                                 nsig/=1
-                            if i==28:
+                            if i==nc-3:
                                 net_input = np.dstack((x[:, :, i - 3:i + 1], x[:, :, i+1], x[:, :, i+2], x[:, :, i+2]))
-                            elif i==29:
+                            elif i==nc-2:
                                 net_input = np.dstack((x[:, :, i - 3:i + 1], x[:, :, i+1], x[:, :, i+1], x[:, :, i+1]))
-                            elif i==30:
+                            elif i==nc-1:
                                 net_input = np.dstack((x[:, :, i - 3:i + 1], x[:, :, i], x[:, :, i], x[:, :, i]))
                             net_input = torch.from_numpy(np.ascontiguousarray(net_input)).permute(2, 0,1).float().unsqueeze(0)
                             net_input = net_input.to(device)
@@ -187,7 +187,6 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
                             nsig = ori_nsig
                     #x = np.clip(tem,0,1)
                     x=tem
-
                 else:
                     x = denoise_tv_chambolle(x, nsig / 255, n_iter_max=tv_iter_max, multichannel=multichannel)
                     #x = TV_denoiser(x, tv_weight, n_iter_max=tv_iter_max)
@@ -225,16 +224,16 @@ def gap_denoise(y, Phi, A, At, _lambda=1, accelerate=True,
                                k+1, psnr_all[k]),
                               'SSIM:{}'.format(ssim_all[k]))
             x = shift(x,step=1)
-            if k==123:
+            if k==100:
                 break
             k = k+1
 
-    return x, psnr_all
+    return x, psnr_all, ssim_all
 
 def admm_denoise(y, Phi, A, At, _lambda=1, gamma=0.01,
                 denoiser='tv', iter_max=50, noise_estimate=True, sigma=None, 
                 tv_weight=0.1, tv_iter_max=5, multichannel=True, x0=None, 
-                X_orig=None, show_iqa=True):
+                X_orig=None, show_iqa=True, nc=31):
     '''
     Alternating direction method of multipliers (ADMM)[1]-based denoising 
     regularization for snapshot compressive imaging (SCI).
@@ -323,7 +322,7 @@ def admm_denoise(y, Phi, A, At, _lambda=1, gamma=0.01,
     k = 0
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     model = net()
-    model.load_state_dict(torch.load(r'./check_points/deep_denoiser.pth'))
+    model.load_state_dict(torch.load(r'./checkpoints/deep_denoiser.pth'))
     model.eval()
     for q, v in model.named_parameters():
         v.requires_grad = False
@@ -333,16 +332,16 @@ def admm_denoise(y, Phi, A, At, _lambda=1, gamma=0.01,
             # Euclidean projection
             yb = A(theta+b,Phi)
             x = (theta+b) + _lambda*(At((y-yb)/(Phi_sum+gamma),Phi)) # ADMM
-            x1 = shift_back(x-b,step=2)
+            x1 = shift_back(x-b,step=1)
             #x1=x-b
             # switch denoiser 
             if denoiser.lower() == 'tv': # total variation (TV) denoising
-                #theta = denoise_tv_chambolle(x1, nsig/255, n_iter_max=tv_iter_max, multichannel=multichannel)
-                theta = TV_denoiser(x1, tv_weight, n_iter_max=tv_iter_max)
+                theta = denoise_tv_chambolle(x1, nsig/255, n_iter_max=tv_iter_max, multichannel=multichannel)
+                # theta = TV_denoiser(x1, tv_weight, n_iter_max=tv_iter_max)
             elif denoiser.lower() == 'hsicnn':
                 if k>=89:
                     tem = None
-                    for i in range(28):
+                    for i in range(nc):
                         net_input = None
                         if i < 3:
                             if i==0:
@@ -360,12 +359,12 @@ def admm_denoise(y, Phi, A, At, _lambda=1, gamma=0.01,
                                 tem = output
                             else:
                                 tem = np.dstack((tem, output))
-                        elif i > 24:
-                            if i == 25:
+                        elif i > nc-4:
+                            if i == nc-3:
                                 net_input = np.dstack((x1[:, :, i - 3:i + 1], x1[:, :, i + 1], x1[:, :, i + 2], x1[:, :, i + 2]))
-                            elif i == 26:
+                            elif i == nc-2:
                                 net_input = np.dstack((x1[:, :, i - 3:i + 1], x1[:, :, i + 1], x1[:, :, i + 1], x1[:, :, i + 1]))
-                            elif i == 27:
+                            elif i == nc-1:
                                 net_input = np.dstack((x1[:, :, i - 3:i + 1], x1[:, :, i], x1[:, :, i], x1[:, :, i]))
                             net_input = torch.from_numpy(np.ascontiguousarray(net_input)).permute(2, 0, 1).float().unsqueeze(0)
                             net_input = net_input.to(device)
@@ -410,7 +409,7 @@ def admm_denoise(y, Phi, A, At, _lambda=1, gamma=0.01,
                               'PSNR {2: 2.2f} dB.'.format(denoiser.upper(), 
                                k+1, psnr_all[k]),
                               'SSIM:{}'.format(ssim_all[k]))
-            theta = shift(theta,step=2)
+            theta = shift(theta,step=1)
             b = b - (x-theta) # update residual
             k = k+1
     return theta, psnr_all,ssim_all

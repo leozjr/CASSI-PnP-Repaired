@@ -8,13 +8,25 @@ We propose a plug-and-play (PnP) method, which uses deep-learning-based denoiser
 
 ## Repo Infomation
 
-**English**:
+**English**
 
-This repository is primarily used for fixing bugs in the original paper author's code. The original author's ADMM method has encountered some issues and cannot run properly. This work is still in progress. Additionally, adaptation testing and other tasks will be conducted on the dev branch.
+The repository has fixed some bugs in the original paper author's code. The original author's ADMM method had some issues and couldn't run properly. The main modifications are as follows:
+
+- Added the "nc" parameter for the number of channels to adapt to both 31-channel and 28-channel data testing.
+- Modified all dispersion steps to 1. You can adjust it to other values as needed, but make sure to maintain consistency.
+- Added batch testing on the CAVE dataset. It reads all scenes in a folder for testing and saves the final PSNR and SSIM results.
+
+> The main branch is original code from the paper's authors. In the dev branch, you will find the modified version with fixes and changes applied.
 
 **Chinese**:
 
-本仓库主要用于修复原论文作者代码的一些BUG，原作者ADMM方法出现了一些问题，无法运行，该工作还在进行中。 此外，还将进行它的改编测试等工作，位于dev 分支下。
+本仓库修复了原论文作者代码的一些BUG，原作者ADMM方法出现了一些问题，无法运行。主要修改如下：
+- 加入nc通道数参数，以同时适应31通道和28通道数据的测试
+- 修改所有色散step为1，可根据需要自行修改为其他值，但要注意前后统一
+- 加入CAVE数据集批量测试，读取文件夹中所有场景进行测试并保存最终PSNR和SSIM
+
+
+> main分支为原代码，dev分支为修改版本
 
 ## Citation
 ```
