@@ -18,6 +18,8 @@ The repository has fixed some bugs in the original paper author's code. The orig
 
 > The main branch is original code from the paper's authors. In the dev branch, you will find the modified version with fixes and changes applied.
 
+Please go to the [original author's repository](https://github.com/zsm1211/PnP-CASSI) to download the model, data, and other folders.
+
 **Chinese**:
 
 本仓库修复了原论文作者代码的一些BUG，原作者ADMM方法出现了一些问题，无法运行。主要修改如下：
@@ -25,8 +27,9 @@ The repository has fixed some bugs in the original paper author's code. The orig
 - 修改所有色散step为1，可根据需要自行修改为其他值，但要注意前后统一
 - 加入CAVE数据集批量测试，读取文件夹中所有场景进行测试并保存最终PSNR和SSIM
 
+> main分支为原代码，dev分支为修改版
 
-> main分支为原代码，dev分支为修改版本
+模型及数据和其他文件夹请前往 [原作者仓库](https://github.com/zsm1211/PnP-CASSI) 下载
 
 ## Citation
 ```
