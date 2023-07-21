@@ -10,11 +10,11 @@ We propose a plug-and-play (PnP) method, which uses deep-learning-based denoiser
 
 **English**:
 
-This repository is primarily used for fixing bugs in the original paper author's code. The original author's ADMM method has encountered some issues and cannot run properly. This work is still in progress. Additionally, adaptation testing and other tasks will be conducted on the dev branch.
+This repository is mainly used to fix some bugs in the original code from the paper's authors. All modifications can be found in the dev branch.
 
 **Chinese**:
 
-本仓库主要用于修复原论文作者代码的一些BUG，原作者ADMM方法出现了一些问题，无法运行，该工作还在进行中。 此外，还将进行它的改编测试等工作，位于dev 分支下。
+本仓库主要用于修复原论文作者代码的一些BUG，所有改动位于dev 分支下。
 
 ## Citation
 ```
